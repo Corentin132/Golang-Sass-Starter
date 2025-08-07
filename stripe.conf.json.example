@@ -1,0 +1,53 @@
+{
+  "publicKey": "pk_test_XYZ",
+  "plans": [
+    {
+      "id": "price_XYZ",
+      "title": "Starter",
+      "price": 4.90,
+      "currency": "EUR",
+      "features": [
+        "1 project",
+        "0 tags",
+        "star entries",
+        "1 user",
+        "3 days data retention",
+        "no push notifications"
+      ],
+      "monthly": true,
+      "planType": "starter"
+    },
+    {
+      "id": "price_XYZ",
+      "title": "Basic",
+      "price": 9.90,
+      "currency": "EUR",
+      "features": [
+        "infinite projects",
+        "infinite tags",
+        "star entries",
+        "1 user",
+        "20 days data retention",
+        "no push notifications"
+      ],
+      "monthly": true,
+      "planType": "basic"
+    },
+    {
+      "id": "price_XYZ",
+      "title": "Pro",
+      "price": 14.90,
+      "currency": "EUR",
+      "features": [
+        "infinite projects",
+        "infinite tags",
+        "star entries",
+        "1 user",
+        "50 days data retention",
+        "push notifications"
+      ],
+      "monthly": true,
+      "planType": "premium"
+    }
+  ]
+}
