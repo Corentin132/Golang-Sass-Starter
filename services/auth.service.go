@@ -57,7 +57,7 @@ func (authService *AuthService) Login(email string, cleanPassword string, refres
 	if !refreshToken {
 		match := checkPasswordHash(cleanPassword, user.Password)
 		if !match {
-			return nil, errors.New("username or password invalid")
+			return nil, errors.New("email or password invalid")
 		}
 	}
 
@@ -72,6 +72,7 @@ func (authService *AuthService) Login(email string, cleanPassword string, refres
 
 // Signup function
 func (authService *AuthService) Signup(params map[string]interface{}, signupWithActivate bool) (response map[string]string, err error) {
+	println("authService.Signup", params)
 	account := &models.Account{}
 	accountColl := mgm.CollectionByName("account")
 	account.Subdomain = strcase.ToKebab(params["subdomain"].(string))
@@ -102,7 +103,7 @@ func (authService *AuthService) Signup(params map[string]interface{}, signupWith
 	account.PlanType = os.Getenv("STARTER_PLAN_TYPE")
 	err = accountColl.Create(account)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error creating account: " + err.Error())
 	}
 
 	// create user
@@ -121,39 +122,45 @@ func (authService *AuthService) Signup(params map[string]interface{}, signupWith
 	user.AccountID = account.ID
 	err = userColl.Create(user)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("error creating user: " + err.Error())
 	}
 
 	go emailService.SendNotificationEmail(os.Getenv("NOTIFIED_ADMIN_EMAIL"), i18n.Tr("en", "authService.signup.subject"), i18n.Tr("en", "authService.signup.messageAdmin", map[string]string{"Subdomain": account.Subdomain, "Email": user.Email}), os.Getenv("LOCALE"))
 
-	if !signupWithActivate {
+	if signupWithActivate {
 		go emailService.SendActivationEmail(bson.M{"_id": user.ID})
-		return nil, err
+		message := map[string]string{"message": "An email has been sent to " + user.Email + " to activate your account."}
+		return message, err
 	} else {
 		message := map[string]string{
-			"token": generateToken(*user),
+			"success": "true",
+			"message": "Account created successfully",
+			"token":   generateToken(*user),
 		}
 		return message, err
 	}
 }
 
 // Activate function
-func (authService *AuthService) Activate(token string, email string) (success bool, err error) {
+func (authService *AuthService) Activate(token string, email string) (message map[string]string, err error) {
 	user := &models.User{}
 	var userService = UserService{}
 	err = userService.getCollection().First(bson.M{"active": false, "confirmationToken": token, "email": email}, user)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	user.Active = true
 	user.ConfirmationToken = ""
 	err = userService.getCollection().Update(user)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	go emailService.SendActiveEmail(bson.M{"_id": user.ID})
-	return true, err
+
+	message = map[string]string{"message": "Account activated successfully",
+		"token": generateToken(*user)}
+	return message, err
 }
 
 // ResetPassword function

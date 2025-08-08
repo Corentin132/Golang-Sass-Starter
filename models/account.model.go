@@ -29,7 +29,6 @@ const (
 // Account struct
 type Account struct {
 	mgm.DefaultModel                `bson:",inline"`
-	Subdomain                       string    `json:"subdomain" bson:"subdomain"`
 	CompanyName                     string    `json:"companyName" bson:"companyName"`
 	CompanyVat                      string    `json:"companyVat" bson:"companyVat"`
 	CompanyBillingAddress           string    `json:"companyBillingAddress" bson:"companyBillingAddress"`

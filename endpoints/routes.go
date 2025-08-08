@@ -16,6 +16,7 @@ var webhookEndpoint = WebhookEndpoint{}
 
 // SetupPublicRoutes function
 func SetupPublicRoutes(app *fiber.App) {
+
 	api := app.Group("/api")
 
 	api.Post("/auth/login", authEndpoint.Login)

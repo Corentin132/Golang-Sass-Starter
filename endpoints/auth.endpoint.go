@@ -55,6 +55,7 @@ func (authEndpoint *AuthEndpoint) SsoLogin(ctx *fiber.Ctx) error {
 // Signup function
 func (authEndpoint *AuthEndpoint) Signup(ctx *fiber.Ctx) error {
 	var inputMap = make(map[string]interface{})
+
 	ctx.BodyParser(&inputMap)
 	v := validate.Map(inputMap)
 	v.StringRule("subdomain", "required")

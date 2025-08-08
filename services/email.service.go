@@ -3,6 +3,7 @@ package services
 import (
 	"crypto/rand"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -53,7 +54,7 @@ func SendMail(from, subject, body string, to []string) error {
 
 	if err != nil {
 		log.Println(err)
-		return err
+		return errors.New("error connecting to SMTP server: " + err.Error())
 	}
 
 	email := mail.NewMSG()
@@ -63,7 +64,7 @@ func SendMail(from, subject, body string, to []string) error {
 	email.SetBody(mail.TextHTML, body)
 
 	err = email.Send(smtpClient)
-	return err
+	return errors.New("error sending email: " + err.Error())
 }
 
 // SendActivationEmail function
@@ -95,16 +96,15 @@ func (emailService *EmailService) SendActivationEmail(q bson.M) (success bool, e
 	return true, err
 }
 func (emailService *EmailService) StoreEmails() (err error) {
-	activate := []string{"activate", "Welcome"}
-	activationLink := []string{"activationLink", "Activation link"}
+	activationLink := []string{"confirmationCode", "Confirmation code"}
 	forgotPassword := []string{"forgotPassword", "Forgot password"}
 	notification := []string{"notification", "Notification"}
-	for _, email := range [][]string{activate, activationLink, forgotPassword, notification} {
+	for _, email := range [][]string{activationLink, forgotPassword, notification} {
 		code := email[0]
 		title := email[1]
 		storedEmail, _ := loadEmail(code, "en")
 		if storedEmail.Code == "" {
-			template, _ := ioutil.ReadFile(fmt.Sprintf("./emails/%s.email.liquid", code))
+			template, _ := ioutil.ReadFile(fmt.Sprintf("./email/%s.email.liquid", code))
 			email := &models.Email{}
 			email.Body = string(template)
 			email.Code = code
@@ -155,7 +155,7 @@ func (emailService *EmailService) SendActiveEmail(q bson.M) (success bool, err e
 	frontendLoginURL := os.Getenv("FRONTEND_LOGIN_URL")
 
 	engine := liquid.NewEngine()
-	emailModel, _ := loadEmail("activate", user.Language)
+	emailModel, _ := loadEmail("confirmationCode", user.Language)
 	bindings := map[string]interface{}{
 		"email":            user.Email,
 		"frontendLoginURL": frontendLoginURL,
@@ -169,7 +169,10 @@ func (emailService *EmailService) SendActiveEmail(q bson.M) (success bool, err e
 func (emailService *EmailService) SendNotificationEmail(email string, subject string, message string, lang string) (success bool, err error) {
 	engine := liquid.NewEngine()
 
-	emailModel, _ := loadEmail("notification", lang)
+	emailModel, err := loadEmail("notification", lang)
+	if err != nil {
+		return false, errors.New("error loading email template: " + err.Error())
+	}
 	frontendLoginURL := os.Getenv("FRONTEND_LOGIN_URL")
 	bindings := map[string]interface{}{
 		"subject":          subject,
@@ -181,7 +184,7 @@ func (emailService *EmailService) SendNotificationEmail(email string, subject st
 
 	err = SendMail(os.Getenv("DEFAULT_EMAIL_FROM"), subject, result, []string{email})
 	if err != nil {
-		return false, err
+		return false, errors.New("error sending notification email: " + err.Error())
 	}
 
 	return true, err
